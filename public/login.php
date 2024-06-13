@@ -1,44 +1,41 @@
 <?php
-include '../config/database.php';
 session_start();
+require '../config/database.php';
+require '../classes/User.php';
 
-$pageTitle = "Connexion";
-include '../includes/header.php';
-?>
+$pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-<h1>Connexion</h1>
-<form method="POST" action="login.php">
-    <label for="username">Nom d'utilisateur:</label>
-    <input type="text" id="username" name="username" required><br>
-    <label for="password">Mot de passe:</label>
-    <input type="password" id="password" name="password" required><br>
-    <button type="submit">Se connecter</button>
-</form>
+$user = new User($pdo);
 
-<?php
-include '../includes/footer.php';
-
-if (isset($_POST['username']) && isset($_POST['password'])) {
-    $username = $conn->real_escape_string($_POST['username']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+    $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Vérifier les informations de connexion
-    $sql = "SELECT id, password FROM users WHERE username='$username'";
-    $result = $conn->query($sql);
-
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        if (password_verify($password, $row['password'])) {
-            $_SESSION['user_id'] = $row['id'];
-            echo "Connexion réussie!";
-        } else {
-            echo "Nom d'utilisateur ou mot de passe incorrect.";
-        }
+    if ($user->login($email, $password)) {
+        header('Location: admin.php');
+        exit();
     } else {
-        echo "Nom d'utilisateur ou mot de passe incorrect.";
+        echo "Email ou mot de passe incorrect.";
     }
-
-    // Fermer la connexion à la base de données
-    $conn->close();
 }
 ?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion</title>
+</head>
+<body>
+    <h1>Connexion</h1>
+    <form method="post">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <label for="password">Mot de passe:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit" name="login">Connexion</button>
+    </form>
+</body>
+</html>
+
