@@ -9,7 +9,6 @@
         <li><a href="../public/index.php" class="nav-link px-2 text-secondary">Accueil</a></li>
         <li><a href="../public/admin.php" class="nav-link px-2 text-white">Créer un Quiz</a></li>
         <li><a href="../public/quiz.php" class="nav-link px-2 text-white">Voir les Quiz</a></li>
-        <li><a href="../public/index.php" class="nav-link px-2 text-white">A Propos</a></li>
     </ul>
 </footer>
 

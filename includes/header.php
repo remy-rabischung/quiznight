@@ -17,7 +17,7 @@ if (session_status() === PHP_SESSION_NONE) {
   <header class="p-3 bg-dark text-white">
     <div class="container">
       <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
-        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <a href="../public/index.php" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
           <img src="../assets/images/Quiz-logo.png" class="bi me-2" width="220" height="80" role="img" aria-label="Bootstrap" href="index.php"></img>
         </a>
 
@@ -25,7 +25,6 @@ if (session_status() === PHP_SESSION_NONE) {
             <li><a href="../public/index.php" class="nav-link px-2 text-secondary">Accueil</a></li>
             <li><a href="../public/admin.php" class="nav-link px-2 text-white">Créer un Quiz</a></li>
             <li><a href="../public/quiz_list.php" class="nav-link px-2 text-white">Voir les Quiz</a></li>
-            <li><a href="../public/index.php" class="nav-link px-2 text-white">A Propos</a></li>
         </ul>
 
         <div class="text-end">
