@@ -1,156 +1,109 @@
 <?php
-include('../includes/header.php');
-include('../config/database.php');
+session_start();
+require_once '../config/database.php';
+require_once '../includes/header.php';
+require_once '../classes/Quiz.php';
+require_once '../classes/Database.php';
 
-if (!isset($_GET['id'])) {
-    die("ID de quiz manquant.");
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
 }
 
-$quizId = $_GET['id'];
-$mode = isset($_GET['mode']) ? $_GET['mode'] : 'site';
+$db = new Database();
+$quiz = new Quiz($db);
 
-function getQuestionsByQuizId($quizId) {
-    global $conn;
-    $sql = "SELECT * FROM questions WHERE quiz_id = ?";
-    $stmt = $conn->prepare($sql);
-    if ($stmt) {
-        $stmt->bind_param("i", $quizId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $questions = [];
-        while ($row = $result->fetch_assoc()) {
-            $questions[] = $row;
+// Vérifiez que l'ID du quiz est passé dans l'URL
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    die("ID de quiz non spécifié.");
+}
+
+$quiz_id = $_GET['id'];
+$quiz_data = $quiz->getQuizById($quiz_id);
+$questions = $quiz->getQuestionsByQuizId($quiz_id);
+
+// Initialiser la session pour suivre la question actuelle
+if (!isset($_SESSION['current_question'])) {
+    $_SESSION['current_question'] = 0;
+    $_SESSION['answers'] = [];
+}
+
+// Gestion de la navigation et soumission des réponses
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isset($_POST['next'])) {
+        if (isset($_POST['answer'])) {
+            $_SESSION['answers'][$_SESSION['current_question']] = $_POST['answer'];
         }
-        return $questions;
-    } else {
-        echo "Erreur de préparation de la requête: " . $conn->error;
-        return [];
-    }
-}
-
-$questions = getQuestionsByQuizId($quizId);
-
-$currentQuestionIndex = isset($_GET['question']) ? (int)$_GET['question'] : 0;
-
-if ($currentQuestionIndex < 0) {
-    $currentQuestionIndex = 0;
-} elseif ($currentQuestionIndex >= count($questions)) {
-    $currentQuestionIndex = count($questions) - 1;
-}
-
-$currentQuestion = $questions[$currentQuestionIndex];
-
-$sql = "SELECT * FROM answers WHERE question_id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $currentQuestion['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-$answers = [];
-while ($row = $result->fetch_assoc()) {
-    $answers[] = $row;
-}
-
-$showAnswers = isset($_GET['show_answers']) && $_GET['show_answers'] == '1';
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && $mode === 'site') {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    if (!isset($_SESSION['score'])) {
-        $_SESSION['score'] = 0;
-    }
-
-    if (isset($_POST['answer'])) {
-        $selectedAnswerId = $_POST['answer'];
-        $sql = "SELECT is_correct FROM answers WHERE id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $selectedAnswerId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $selectedAnswer = $result->fetch_assoc();
-
-        if ($selectedAnswer['is_correct']) {
-            $_SESSION['score']++;
+        $_SESSION['current_question']++;
+    } elseif (isset($_POST['prev'])) {
+        $_SESSION['current_question']--;
+    } elseif (isset($_POST['submit'])) {
+        if (isset($_POST['answer'])) {
+            $_SESSION['answers'][$_SESSION['current_question']] = $_POST['answer'];
         }
-    }
-
-    if ($currentQuestionIndex < count($questions) - 1) {
-        header("Location: quiz_detail.php?id=$quizId&mode=$mode&question=" . ($currentQuestionIndex + 1));
-        exit();
-    } else {
-        $finalScore = $_SESSION['score'];
+        $score = 0;
+        foreach ($questions as $index => $question) {
+            $question_id = $question['id'];
+            if (isset($_SESSION['answers'][$index])) {
+                $answer_id = $_SESSION['answers'][$index];
+                $answers = $quiz->getAnswersByQuestionId($question_id);
+                foreach ($answers as $answer) {
+                    if ($answer['id'] == $answer_id && $answer['is_correct']) {
+                        $score++;
+                    }
+                }
+            }
+        }
+        echo "Votre score : $score / " . count($questions);
         session_destroy();
+        exit();
     }
 }
+
+$current_question_index = $_SESSION['current_question'];
+if ($current_question_index < 0) {
+    $current_question_index = 0;
+    $_SESSION['current_question'] = 0;
+} elseif ($current_question_index >= count($questions)) {
+    $current_question_index = count($questions) - 1;
+    $_SESSION['current_question'] = $current_question_index;
+}
+
+$current_question = $questions[$current_question_index];
+$answers = $quiz->getAnswersByQuestionId($current_question['id']);
 ?>
 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title><?php echo htmlspecialchars($quiz_data['title']); ?></title>
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
 <div class="container">
-    <div class="quiz-card">
-        <h3><?php echo htmlspecialchars($currentQuestion['question_text']); ?></h3>
-        <?php if ($mode === 'site'): ?>
-            <?php if (isset($finalScore)): ?>
-                <div class="quiz-result">
-                    Votre score final est: <?php echo $finalScore; ?> / <?php echo count($questions); ?>
-                </div>
-            <?php else: ?>
-                <form method="post" action="quiz_detail.php?id=<?php echo $quizId; ?>&mode=<?php echo $mode; ?>&question=<?php echo $currentQuestionIndex; ?>">
-                    <ul class="answer-list">
-                        <?php foreach ($answers as $answer): ?>
-                            <li>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="answer" id="answer<?php echo $answer['id']; ?>" value="<?php echo $answer['id']; ?>">
-                                    <label class="form-check-label" for="answer<?php echo $answer['id']; ?>">
-                                        <?php echo htmlspecialchars($answer['answer_text']); ?>
-                                    </label>
-                                </div>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <div class="quiz-navigation">
-                        <a href="quiz_detail.php?id=<?php echo $quizId; ?>&mode=<?php echo $mode; ?>&question=<?php echo $currentQuestionIndex - 1; ?>" class="btn btn-secondary">Précédent</a>
-                        <button type="submit" class="btn btn-custom">Soumettre</button>
-                        <a href="quiz_detail.php?id=<?php echo $quizId; ?>&mode=<?php echo $mode; ?>&question=<?php echo $currentQuestionIndex + 1; ?>" class="btn btn-custom">Suivant</a>
-                    </div>
-                </form>
-            <?php endif; ?>
-        <?php elseif ($mode === 'pub'): ?>
-            <ul class="answer-list">
-                <?php foreach ($answers as $answer): ?>
-                    <li><?php echo htmlspecialchars($answer['answer_text']); ?></li>
-                <?php endforeach; ?>
-            </ul>
-            <div class="quiz-navigation">
-                <a href="quiz_detail.php?id=<?php echo $quizId; ?>&mode=<?php echo $mode; ?>&question=<?php echo $currentQuestionIndex - 1; ?>" class="btn btn-secondary">Précédent</a>
-                <?php if ($currentQuestionIndex < count($questions) - 1): ?>
-                    <a href="quiz_detail.php?id=<?php echo $quizId; ?>&mode=<?php echo $mode; ?>&question=<?php echo $currentQuestionIndex + 1; ?>" class="btn btn-custom">Suivant</a>
-                <?php else: ?>
-                    <a href="quiz_detail.php?id=<?php echo $quizId; ?>&mode=pub&show_answers=1" class="btn btn-custom">Voir les réponses</a>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<?php if ($showAnswers): ?>
-    <div class="container show-answers">
-        <h3>Réponses Correctes</h3>
-        <?php foreach ($questions as $question): ?>
-            <div class="answer-card">
-                <h4><?php echo htmlspecialchars($question['question_text']); ?></h4>
-                <ul class="answer-list">
-                    <?php
-                    $sql = "SELECT * FROM answers WHERE question_id = ? AND is_correct = 1";
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("i", $question['id']);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    while ($row = $result->fetch_assoc()): ?>
-                        <li><?php echo htmlspecialchars($row['answer_text']); ?></li>
-                    <?php endwhile; ?>
-                </ul>
-            </div>
+    <h1><?php echo htmlspecialchars($quiz_data['title']); ?></h1>
+    <p><?php echo htmlspecialchars($quiz_data['description']); ?></p>
+    <form method="POST" action="quiz_detail.php?id=<?php echo $quiz_id; ?>">
+        <h3><?php echo htmlspecialchars($current_question['question_text']); ?></h3>
+        <?php foreach ($answers as $answer): ?>
+            <label>
+                <input type="radio" name="answer" value="<?php echo $answer['id']; ?>" <?php echo isset($_SESSION['answers'][$current_question_index]) && $_SESSION['answers'][$current_question_index] == $answer['id'] ? 'checked' : ''; ?>>
+                <?php echo htmlspecialchars($answer['answer_text']); ?>
+            </label><br>
         <?php endforeach; ?>
-    </div>
-<?php endif; ?>
-
-<?php include('../includes/footer.php'); ?>
+        <?php if ($current_question_index > 0): ?>
+            <button type="submit" name="prev" class="btn btn-secondary">Précédent</button>
+        <?php endif; ?>
+        <?php if ($current_question_index < count($questions) - 1): ?>
+            <button type="submit" name="next" class="btn btn-primary">Suivant</button>
+        <?php else: ?>
+            <button type="submit" name="submit" class="btn btn-success">Soumettre le quiz</button>
+        <?php endif; ?>
+    </form>
+</div>
+<?php include '../includes/footer.php'; ?>
+</body>
+</html>

@@ -4,6 +4,8 @@ body {
     margin: 10;
     padding: 10;
     background-image: "./assets/images/fond-body.jpg";
+    display: flex;
+    flex-direction: column;
 }
 
 /* Style pour les titres */
@@ -39,4 +41,20 @@ input[type="radio"] {
 /* Style pour les messages de succès */
 .success-message {
     color: green;
+}
+
+html, body {
+    height: 100%;
+}
+
+.container {
+    flex: 1;
+}
+
+footer {
+    background: #343a40;
+    color: white;
+    padding: 10px 0;
+    text-align: center;
+    width: 100%;
 }

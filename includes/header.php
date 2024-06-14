@@ -20,17 +20,21 @@
             <li><a href="../public/index.php" class="nav-link px-2 text-secondary">Accueil</a></li>
             <li><a href="../public/admin.php" class="nav-link px-2 text-white">Créer un Quiz</a></li>
             <li><a href="../public/quiz_list.php" class="nav-link px-2 text-white">Voir les Quiz</a></li>
+            <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') { ?>
+                <li><a href="../public/admin_users.php" class="nav-link px-2 text-white">Gérer les Utilisateurs</a></li>
+            <?php } ?>
         </ul>
 
+
         <div class="text-end">
-          <?php if (isset($_SESSION['user_id'])) { ?>
-            <form action="../includes/logout.php" method="post">
-              <button type="submit" class="btn btn-outline-light me-2">Se Déconnecter</button>
-            </form>
-          <?php } else { ?>
-            <button type="button" class="btn btn-outline-light me-2"><a href="../public/login.php" style="color: white;">Se Connecter</a></button>
-            <button type="button" class="btn btn-light"><a href="../public/register.php" style="color: black;">S'inscrire</a></button>
-          <?php } ?>
+            <?php if (isset($_SESSION['user_id'])) { ?>
+                <form action="../public/logout.php" method="post">
+                    <button type="submit" class="btn btn-outline-light me-2">Se Déconnecter</button>
+                </form>
+            <?php } else { ?>
+                <button type="button" class="btn btn-outline-light me-2"><a href="../public/login.php" class="text-white">Se Connecter</a></button>
+                <button type="button" class="btn btn-light"><a href="../public/register.php">S'inscrire</a></button>
+            <?php } ?>
         </div>
       </div>
     </div>
