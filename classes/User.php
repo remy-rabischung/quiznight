@@ -17,5 +17,11 @@ class User {
         }
         return false;
     }
+
+    public function register($email, $password) {
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $this->pdo->prepare('INSERT INTO users (email, password) VALUES (?, ?)');
+        $stmt->execute([$email, $passwordHash]);
+    }
 }
 ?>

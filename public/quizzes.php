@@ -1,4 +1,5 @@
 <?php
+require '../config/database.php';
 $stmt = $pdo->query('SELECT * FROM quizzes');
 $quizzes = $stmt->fetchAll();
 ?>
