@@ -29,11 +29,11 @@
         <div class="text-end">
             <?php if (isset($_SESSION['user_id'])) { ?>
                 <form action="../public/logout.php" method="post">
-                    <button type="submit" class="btn btn-outline-light me-2">Se Déconnecter</button>
+                    <button type="submit" class="btn btn-outline-danger me-2">Se Déconnecter</button>
                 </form>
             <?php } else { ?>
                 <button type="button" class="btn btn-outline-light me-2"><a href="../public/login.php" class="text-white">Se Connecter</a></button>
-                <button type="button" class="btn btn-light"><a href="../public/register.php">S'inscrire</a></button>
+                <button type="button" class="btn btn-primary"><a href="../public/register.php">S'inscrire</a></button>
             <?php } ?>
         </div>
       </div>
