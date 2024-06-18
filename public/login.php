@@ -2,7 +2,7 @@
 session_start();
 require '../config/database.php';
 require '../classes/User.php';
-
+require '../public/auth_check.php';
 $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -13,10 +13,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     $password = $_POST['password'];
 
     if ($user->login($email, $password)) {
+        $_SESSION['user_id'] = $user->getIdByEmail($email); // Upewnij się, że masz metodę getIdByEmail w klasie User
         header('Location: admin.php');
         exit();
     } else {
-        echo "Email ou mot de passe incorrect.";
+        echo "Email lub hasło jest niepoprawne.";
     }
 }
 ?>
@@ -38,4 +39,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     </form>
 </body>
 </html>
-

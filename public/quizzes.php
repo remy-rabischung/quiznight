@@ -1,5 +1,6 @@
 <?php
 require '../config/database.php';
+require '../public/auth_check.php';
 $stmt = $pdo->query('SELECT * FROM quizzes');
 $quizzes = $stmt->fetchAll();
 ?>

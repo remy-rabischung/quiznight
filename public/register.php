@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     $password = $_POST['password'];
 
     $user->register($email, $password);
-    header('Location: login.php');
+    header('Location: login.php'); // Poprawne przekierowanie na stronę logowania
     exit();
 }
 ?>

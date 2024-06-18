@@ -5,13 +5,18 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+require '../public/auth_check.php';
 require '../config/database.php';
 require '../classes/Quiz.php';
 require '../classes/Question.php';
 require '../classes/Answer.php';
 
-$pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Erreur de connexion : " . $e->getMessage());
+}
 
 $quiz = new Quiz($pdo);
 $question = new Question($pdo);
@@ -59,11 +64,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_question_and_answ
 
     <h2>Vos Quiz</h2>
     <?php
-    $quizzes = $quiz->getByUser($_SESSION['user_id']);
-    foreach ($quizzes as $q) {
-        echo '<a href="admin.php?quiz_id=' . $q['id'] . '">' . htmlspecialchars($q['title']) . '</a><br>';
-        echo 'Created at: ' . $q['created_at'] . '<br>';
-        echo htmlspecialchars($q['description']) . '<br><br>';
+    try {
+        $quizzes = $quiz->getByUser($_SESSION['user_id']);
+        foreach ($quizzes as $q) {
+            echo '<a href="admin.php?quiz_id=' . $q['id'] . '">' . htmlspecialchars($q['title']) . '</a><br>';
+            echo 'Created at: ' . $q['created_at'] . '<br>';
+            echo htmlspecialchars($q['description']) . '<br><br>';
+        }
+    } catch (Exception $e) {
+        echo "Erreur : " . $e->getMessage();
     }
     ?>
 
